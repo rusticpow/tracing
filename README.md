@@ -37,11 +37,11 @@ Tokio project, but does _not_ require the `tokio` runtime to be used.
 
 ### In Applications
 
-In order to record trace events, executables have to use a collector
-implementation compatible with `tracing`. A collector implements a way of
+In order to record trace events, executables have to use a subscriber
+implementation compatible with `tracing`. A subscriber implements a way of
 collecting trace data, such as by logging it to standard output.
 [`tracing-subscriber`][tracing-subscriber-docs]'s [`fmt` module][fmt] provides
-a collector for logging traces with reasonable defaults. Additionally,
+a subscriber for logging traces with reasonable defaults. Additionally,
 `tracing-subscriber` is able to consume messages emitted by `log`-instrumented
 libraries and modules.
 
@@ -53,7 +53,7 @@ tracing = "0.1"
 tracing-subscriber = "0.3"
 ```
 
-Then create and install a collector, for example using [`init()`]:
+Then create and install a subscriber, for example using [`init()`]:
 
 ```rust
 use tracing::info;
@@ -75,7 +75,7 @@ fn main() {
 }
 ```
 
-Using `init()` calls [`set_global_default()`] so this collector will be used
+Using `init()` calls [`set_global_default()`] so this subscriber will be used
 as the default in all threads for the remainder of the duration of the
 program, similar to how loggers work in the `log` crate.
 
@@ -84,34 +84,34 @@ program, similar to how loggers work in the `log` crate.
 [`set_global_default`]: https://docs.rs/tracing/latest/tracing/subscriber/fn.set_global_default.html
 
 
-For more control, a collector can be built in stages and not set globally,
-but instead used to locally override the default collector. For example:
+For more control, a subscriber can be built in stages and not set globally,
+but instead used to locally override the default subscriber. For example:
 
 ```rust
 use tracing::{info, Level};
 use tracing_subscriber;
 
 fn main() {
-    let collector = tracing_subscriber::fmt()
+    let subscriber = tracing_subscriber::fmt()
         // filter spans/events with level TRACE or higher.
         .with_max_level(Level::TRACE)
         // build but do not install the subscriber.
         .finish();
 
-    tracing::collect::with_default(collector, || {
+    tracing::subscriber::with_default(subscriber, || {
         info!("This will be logged to stdout");
     });
     info!("This will _not_ be logged to stdout");
 }
 ```
 
-Any trace events generated outside the context of a collector will not be collected.
+Any trace events generated outside the context of a subscriber will not be collected.
 
-This approach allows trace data to be collected by multiple collectors
+This approach allows trace data to be collected by multiple subscribers
 within different contexts in the program. Note that the override only applies to the
 currently executing thread; other threads will not see the change from with_default.
 
-Once a collector has been set, instrumentation points may be added to the
+Once a subscriber has been set, instrumentation points may be added to the
 executable using the `tracing` crate's macros.
 
 [`tracing-subscriber`]: https://docs.rs/tracing-subscriber/
